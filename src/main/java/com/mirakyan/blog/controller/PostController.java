@@ -3,21 +3,18 @@ package com.mirakyan.blog.controller;
 
 import com.mirakyan.blog.dto.PostDto;
 import com.mirakyan.blog.dto.PostsResponseDto;
-import com.mirakyan.blog.model.Post;
-import com.mirakyan.blog.service.PostServece;
+import com.mirakyan.blog.service.PostService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/posts")
 @RequiredArgsConstructor
 public class PostController {
 
-    private final PostServece postService;
+    private final PostService postService;
 
     @GetMapping
     public ResponseEntity<PostsResponseDto> getPosts(
@@ -25,32 +22,15 @@ public class PostController {
             @RequestParam(defaultValue = "1") int pageNumber,
             @RequestParam(defaultValue = "10") int pageSize) {
 
-        PostDto post = PostDto.builder()
-                .id(1L)
-                .title("Sample Post")
-                .text("This is a sample post content.")
-                .tags(List.of("sample", "post"))
-                .likesCount(10)
-                .commentsCount(5)
-                .build();
-        PostsResponseDto response = PostsResponseDto.builder()
-                .hasNext(false)
-                .hasPrev(false)
-                .lastPage(1)
-                .posts(List.of(post))
-                .build();
+        PostsResponseDto response = postService.getAllPosts(search, pageNumber, pageSize);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Post> getPostById(@PathVariable Long id) {
-        // Placeholder implementation
-        Post post = Post.builder()
-                .id(id)
-                .title("Sample Post")
-                .text("This is a sample post content.")
-                .build();
-        return ResponseEntity.ok(post);
+    public ResponseEntity<PostDto> getPostById(@PathVariable Long id) {
+        return postService.getPostById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/{id}/image")
@@ -64,5 +44,28 @@ public class PostController {
     public ResponseEntity<PostDto> createPost(@RequestBody PostDto postDto) {
         PostDto createdPost = postService.createPost(postDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdPost);
+    }
+
+    @PostMapping("/{id}/likes")
+    public ResponseEntity<Integer> incrementLikes(@PathVariable  Long id) {
+        return postService.incrementLikes(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<PostDto> updatePost(@PathVariable Long id, @RequestBody PostDto postDto) {
+        return postService.updatePost(id, postDto)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletePost(@PathVariable Long id) {
+        if (postService.deletePost(id)) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 }
