@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.Transient;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -42,19 +41,21 @@ public class Post {
     @Column("image_path")
     private String imagePath;
 
+    // Храним теги напрямую как массив text[] в PostgreSQL
     @Column("tags")
-    private String tagsJson;
-
-    @Transient
-    private List<String> tags;
+    private String[] tags;
 
     public Post(String title, String text, List<String> tags) {
         this.title = title;
         this.text = text;
-        this.tags = tags;
         this.likesCount = 0;
         this.commentsCount = 0;
         this.createdAt = Instant.now();
         this.updatedAt = Instant.now();
+        if (tags != null) {
+            this.tags = tags.stream().distinct().toArray(String[]::new);
+        } else {
+            this.tags = new String[0];
+        }
     }
 }

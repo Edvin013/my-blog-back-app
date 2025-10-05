@@ -1,8 +1,5 @@
 package com.mirakyan.blog.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirakyan.blog.dto.PostDto;
 import com.mirakyan.blog.dto.PostsResponseDto;
 import com.mirakyan.blog.model.Post;
@@ -16,7 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -25,17 +23,17 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional
 public class PostServiceImpl implements PostService {
-    private static final String IMAGES_DIR = "images";
+    private static final String IMAGES_DIR = "images"; // пока не используется
     private static final int MAX_PREVIEW_LENGTH = 128;
 
     private final PostRepository postRepository;
-    private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
     @Override
     public Optional<PostDto> getPostById(Long id) {
         return postRepository.findById(id)
-                .map(this::convertToDto);
+                .map(this::convertToDto)
+                .map(this::truncateTextForPreview);
     }
 
     @Override
@@ -43,8 +41,7 @@ public class PostServiceImpl implements PostService {
         Post post = Post.builder()
                 .title(postDto.getTitle())
                 .text(postDto.getText())
-                //.tags(postDto.getTags())
-                // .tagsJson(convertTagsToJson(postDto.getTags()))
+                .tags(normalizeTagsToArray(postDto.getTags()))
                 .likesCount(0)
                 .commentsCount(0)
                 .createdAt(Instant.now())
@@ -60,8 +57,9 @@ public class PostServiceImpl implements PostService {
         return postRepository.findById(id).map(post -> {
             post.setTitle(postDto.getTitle());
             post.setText(postDto.getText());
-            // post.setTags(postDto.getTags());
-            // post.setTagsJson(convertTagsToJson(postDto.getTags()));
+            if (postDto.getTags() != null) {
+                post.setTags(normalizeTagsToArray(postDto.getTags()));
+            }
             post.setUpdatedAt(Instant.now());
 
             Post updateDTO = postRepository.save(post);
@@ -73,7 +71,7 @@ public class PostServiceImpl implements PostService {
     @Override
     public boolean deletePost(Long id) {
         if (postRepository.existsById(id)) {
-            // todo commen delete
+            // todo comments delete handled by FK cascade
             postRepository.deleteById(id);
             return true;
         }
@@ -96,9 +94,7 @@ public class PostServiceImpl implements PostService {
     public PostsResponseDto getAllPosts(String search, int pageNumber, int pageSize) {
         Pageable pageable = PageRequest.of(pageNumber - 1, pageSize);
 
-        // todo
-        // Временно используем простой поиск по всем постам
-        // В production версии здесь будет более сложная логика поиска
+        // TODO внедрить реальный поиск по тегам и тексту
         Page<Post> page = postRepository.findAllByOrderByCreatedAtDesc(pageable);
 
         List<PostDto> posts = page.getContent().stream()
@@ -114,27 +110,19 @@ public class PostServiceImpl implements PostService {
                 .build();
     }
 
-    private String convertTagsToJson(List<String> tags) {
-        if (tags == null || tags.isEmpty()) {
-            return "[]";
-        }
-        try {
-            return objectMapper.writeValueAsString(tags);
-        } catch (JsonProcessingException e) {
-            return "[]";
-        }
+    private String[] normalizeTagsToArray(List<String> tags) {
+        if (tags == null) return new String[0];
+        List<String> cleaned = tags.stream()
+                .filter(t -> t != null && !t.trim().isEmpty())
+                .map(t -> t.trim().toLowerCase())
+                .distinct()
+                .collect(Collectors.toList());
+        return cleaned.toArray(new String[0]);
     }
 
-    private List<String> convertTagsFromJson(String tagsJson) {
-        if (tagsJson == null || tagsJson.isEmpty()) {
-            return new ArrayList<>();
-        }
-        try {
-            return objectMapper.readValue(tagsJson, new TypeReference<List<String>>() {
-            });
-        } catch (JsonProcessingException e) {
-            return new ArrayList<>();
-        }
+    private List<String> arrayToList(String[] tags) {
+        if (tags == null) return Collections.emptyList();
+        return Arrays.asList(tags);
     }
 
     private PostDto convertToDto(Post post) {
@@ -142,7 +130,7 @@ public class PostServiceImpl implements PostService {
                 .id(post.getId())
                 .title(post.getTitle())
                 .text(post.getText())
-                .tags(convertTagsFromJson(post.getTagsJson()))
+                .tags(arrayToList(post.getTags()))
                 .likesCount(post.getLikesCount())
                 .commentsCount(post.getCommentsCount())
                 .build();
