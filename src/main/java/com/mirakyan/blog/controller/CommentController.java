@@ -44,4 +44,14 @@ public class CommentController {
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
+
+    @DeleteMapping("/{commentId}")
+    public ResponseEntity<Void> deleteComment(@PathVariable Long postId, @PathVariable Long commentId) {
+
+        if (commentService.deleteComment(postId, commentId)) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }

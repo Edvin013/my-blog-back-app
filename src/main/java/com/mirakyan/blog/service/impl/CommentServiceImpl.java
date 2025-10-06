@@ -66,6 +66,19 @@ public class CommentServiceImpl implements CommentService {
                 .map(this::convertToDto);
     }
 
+    public boolean deleteComment(Long postId, Long commentId) {
+        Optional<Comment> commentOpt = commentRepository.findById(commentId);
+
+        if (commentOpt.isPresent() && commentOpt.get().getPostId().equals(postId)) {
+            commentRepository.deleteById(commentId);
+            // Уменьшаем счетчик комментариев в посте
+            postService.decrementCommentsCount(postId);
+            return true;
+        }
+
+        return false;
+    }
+
     private CommentDto convertToDto(Comment comment) {
         return CommentDto.builder()
                 .id(comment.getId())

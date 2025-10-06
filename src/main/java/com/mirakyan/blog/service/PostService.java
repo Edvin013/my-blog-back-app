@@ -21,4 +21,6 @@ public interface PostService {
     boolean existsById(Long postId);
 
     void incrementCommentsCount(Long postId);
+
+    void decrementCommentsCount(Long postId);
 }

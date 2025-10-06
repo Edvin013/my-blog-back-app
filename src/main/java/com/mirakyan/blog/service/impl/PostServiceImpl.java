@@ -140,6 +140,13 @@ public class PostServiceImpl implements PostService {
 
     }
 
+    @Override
+    public void decrementCommentsCount(Long postId) {
+        Post post = postRepository.findById(postId).get();
+        post.setCommentsCount(Math.max(0, post.getCommentsCount() - 1));
+        postRepository.save(post);
+    }
+
     private PostDto convertToDto(Post post) {
         return PostDto.builder()
                 .id(post.getId())
