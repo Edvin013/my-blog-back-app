@@ -41,7 +41,6 @@ public class Post {
     @Column("image_path")
     private String imagePath;
 
-    // Храним теги напрямую как массив text[] в PostgreSQL
     @Column("tags")
     private String[] tags;
 

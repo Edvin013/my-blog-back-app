@@ -23,6 +23,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional
 public class PostServiceImpl implements PostService {
+
+
     private static final String IMAGES_DIR = "images"; // пока не используется
     private static final int MAX_PREVIEW_LENGTH = 128;
 
@@ -110,6 +112,11 @@ public class PostServiceImpl implements PostService {
                 .build();
     }
 
+    @Override
+    public boolean existsById(Long postId) {
+        return postRepository.existsById(postId);
+    }
+
     private String[] normalizeTagsToArray(List<String> tags) {
         if (tags == null) return new String[0];
         List<String> cleaned = tags.stream()
@@ -123,6 +130,14 @@ public class PostServiceImpl implements PostService {
     private List<String> arrayToList(String[] tags) {
         if (tags == null) return Collections.emptyList();
         return Arrays.asList(tags);
+    }
+
+    @Override
+    public void incrementCommentsCount(Long id) {
+        Post post = postRepository.findById(id).get();
+        post.setCommentsCount(post.getCommentsCount() + 1);
+        postRepository.save(post);
+
     }
 
     private PostDto convertToDto(Post post) {

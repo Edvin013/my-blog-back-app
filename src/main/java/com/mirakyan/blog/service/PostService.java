@@ -17,4 +17,8 @@ public interface PostService {
     Optional<Integer> incrementLikes(Long id);
 
     PostsResponseDto getAllPosts(String search, int pageNumber, int pageSize);
+
+    boolean existsById(Long postId);
+
+    void incrementCommentsCount(Long postId);
 }

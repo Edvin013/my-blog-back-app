@@ -4,10 +4,7 @@ import com.mirakyan.blog.dto.CommentDto;
 import com.mirakyan.blog.service.CommentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -22,5 +19,29 @@ public class CommentController {
 
         List<CommentDto> comments = commentService.getCommentsByPostId(postId);
         return ResponseEntity.ok(comments);
+    }
+    @GetMapping("/{commentId}")
+    public ResponseEntity<CommentDto> getComment(@PathVariable Long postId, @PathVariable Long commentId) {
+
+        return commentService.getCommentById(postId, commentId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping
+    public ResponseEntity<CommentDto> addComment(@PathVariable Long postId, @RequestBody CommentDto commentDto) {
+        return commentService.addCommentToPost(postId, commentDto)
+                .map(coment -> ResponseEntity.ok(coment))
+                .orElse(ResponseEntity.notFound().build());
+
+    }
+
+    @PutMapping("/{commentId}")
+    public ResponseEntity<CommentDto> updateComment(@PathVariable Long postId,
+                                                    @PathVariable Long commentId,
+                                                    @RequestBody CommentDto commentDto) {
+      return commentService.updateComment(postId, commentId, commentDto)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
     }
 }
