@@ -6,5 +6,4 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface PostRepository extends CrudRepository<Post, Long> {
-    // Пагинация и сортировка реализованы вручную в сервисе (см. PostServiceImpl).
 }

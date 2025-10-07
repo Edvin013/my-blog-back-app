@@ -39,7 +39,6 @@ public class PostController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Вариант A из ТЗ: добавляем POST /api/posts/{id} для совместимости
     @PostMapping("/{id}")
     public ResponseEntity<PostDto> getPostByIdViaPost(@PathVariable Long id) { // возвращает то же что и GET
         return getPostById(id);
@@ -64,14 +63,13 @@ public class PostController {
     @PutMapping(value = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> updateImage(@PathVariable Long id, @RequestParam("image") MultipartFile image) {
         if (image == null || image.isEmpty()) {
-            // Пустой файл => 400 Bad Request (уточнено в требованиях)
             return ResponseEntity.badRequest().build();
         }
         boolean updated = postService.updateImage(id, image);
         if (updated) {
             return ResponseEntity.ok().build();
         }
-        return ResponseEntity.notFound().build(); // пост не найден
+        return ResponseEntity.notFound().build();
     }
 
     @PostMapping
@@ -88,7 +86,7 @@ public class PostController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<PostDto> updatePost(@PathVariable Long id, @Valid @RequestBody PostDto postDto) { // @Valid
+    public ResponseEntity<PostDto> updatePost(@PathVariable Long id, @Valid @RequestBody PostDto postDto) {
         return postService.updatePost(id, postDto)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());

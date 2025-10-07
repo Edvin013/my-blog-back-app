@@ -57,6 +57,7 @@ class CommentControllerTest {
                 .text("Test")
                 .postId(1L)
                 .build();
+
         mockMvc.perform(post("/api/posts/1/comments")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(request)))
@@ -72,6 +73,7 @@ class CommentControllerTest {
                 .text("Updated")
                 .postId(2L)
                 .build();
+
         when(commentService.updateComment(eq(2L), eq(3L), any(CommentDto.class)))
                 .thenReturn(Optional.of(response));
 

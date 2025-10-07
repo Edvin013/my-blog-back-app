@@ -59,7 +59,6 @@ public class CommentServiceImpl implements CommentService {
                     log.info("Обновлён комментарий id={} поста id={}", commentId, postId);
                     return convertToDto(updatedComment);
                 });
-
     }
 
     @Override
