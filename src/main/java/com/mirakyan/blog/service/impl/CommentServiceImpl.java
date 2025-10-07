@@ -6,6 +6,8 @@ import com.mirakyan.blog.repository.CommentRepository;
 import com.mirakyan.blog.service.CommentService;
 import com.mirakyan.blog.service.PostService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +21,7 @@ import java.util.Optional;
 public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final PostService postService;
+    private static final Logger log = LoggerFactory.getLogger(CommentServiceImpl.class);
 
     @Override
     public List<CommentDto> getCommentsByPostId(Long postId) {
@@ -41,6 +44,7 @@ public class CommentServiceImpl implements CommentService {
                 .build();
         Comment savedComment = commentRepository.save(comment);
         postService.incrementCommentsCount(commentDto.getPostId());
+        log.info("Добавлен комментарий id={} к посту id={}", savedComment.getId(), postId);
         return Optional.of(convertToDto(savedComment));
     }
 
@@ -51,8 +55,8 @@ public class CommentServiceImpl implements CommentService {
                 .map(existingComment -> {
                     existingComment.setText(commentDto.getText());
                     existingComment.setUpdatedAt(Instant.now());
-
                     Comment updatedComment = commentRepository.save(existingComment);
+                    log.info("Обновлён комментарий id={} поста id={}", commentId, postId);
                     return convertToDto(updatedComment);
                 });
 
@@ -68,14 +72,12 @@ public class CommentServiceImpl implements CommentService {
 
     public boolean deleteComment(Long postId, Long commentId) {
         Optional<Comment> commentOpt = commentRepository.findById(commentId);
-
         if (commentOpt.isPresent() && commentOpt.get().getPostId().equals(postId)) {
             commentRepository.deleteById(commentId);
-            // Уменьшаем счетчик комментариев в посте
-            postService.decrementCommentsCount(postId);
+            postService.decrementCommentsCount(postId); // уменьшение счётчика
+            log.info("Удалён комментарий id={} поста id={}", commentId, postId);
             return true;
         }
-
         return false;
     }
 

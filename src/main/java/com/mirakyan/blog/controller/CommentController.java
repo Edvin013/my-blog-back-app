@@ -3,8 +3,10 @@ package com.mirakyan.blog.controller;
 import com.mirakyan.blog.dto.CommentDto;
 import com.mirakyan.blog.service.CommentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -29,9 +31,9 @@ public class CommentController {
     }
 
     @PostMapping
-    public ResponseEntity<CommentDto> addComment(@PathVariable Long postId, @RequestBody CommentDto commentDto) {
+    public ResponseEntity<CommentDto> addComment(@PathVariable Long postId, @Valid @RequestBody CommentDto commentDto) {
         return commentService.addCommentToPost(postId, commentDto)
-                .map(coment -> ResponseEntity.ok(coment))
+                .map(c -> ResponseEntity.status(HttpStatus.CREATED).body(c)) // 201 Created
                 .orElse(ResponseEntity.notFound().build());
 
     }
@@ -39,7 +41,7 @@ public class CommentController {
     @PutMapping("/{commentId}")
     public ResponseEntity<CommentDto> updateComment(@PathVariable Long postId,
                                                     @PathVariable Long commentId,
-                                                    @RequestBody CommentDto commentDto) {
+                                                    @Valid @RequestBody CommentDto commentDto) {
       return commentService.updateComment(postId, commentId, commentDto)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());

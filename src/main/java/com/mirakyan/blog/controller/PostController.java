@@ -5,9 +5,15 @@ import com.mirakyan.blog.dto.PostDto;
 import com.mirakyan.blog.dto.PostsResponseDto;
 import com.mirakyan.blog.service.PostService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import jakarta.validation.Valid;
+
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -18,30 +24,58 @@ public class PostController {
 
     @GetMapping
     public ResponseEntity<PostsResponseDto> getPosts(
-            @RequestParam(required = false, defaultValue = "") String search,
-            @RequestParam(defaultValue = "1") int pageNumber,
-            @RequestParam(defaultValue = "10") int pageSize) {
+            @RequestParam(name = "search") String search,
+            @RequestParam(name = "pageNumber") int pageNumber,
+            @RequestParam(name = "pageSize") int pageSize) {
 
         PostsResponseDto response = postService.getAllPosts(search, pageNumber, pageSize);
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<PostDto> getPostById(@PathVariable Long id) {
         return postService.getPostById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    // Вариант A из ТЗ: добавляем POST /api/posts/{id} для совместимости
+    @PostMapping("/{id}")
+    public ResponseEntity<PostDto> getPostByIdViaPost(@PathVariable Long id) { // возвращает то же что и GET
+        return getPostById(id);
+    }
+
     @GetMapping("/{id}/image")
-    public ResponseEntity<String> getPostImage(@PathVariable Long id) {
-        // Placeholder implementation - возвращаем URL изображения-заглушки
-        String imageUrl = "https://image.winudf.com/v2/image/bW9iaS5hbmRyb2FwcC5wcm9zcGVyaXR5YXBwcy5jNTExMV9zY3JlZW5fN18xNTI0MDQxMDUwXzAyMQ/screen-7.jpg?fakeurl=1&type=.jpg";
-        return ResponseEntity.ok(imageUrl);
+    public ResponseEntity<byte[]> getPostImage(@PathVariable Long id) {
+        if (!postService.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        Optional<byte[]> imageOpt = postService.getImage(id);
+        if (!imageOpt.isPresent()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT); // 204 если изображения нет
+        }
+        byte[] bytes = imageOpt.get();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM); // TODO: определять content-type по расширени��
+        headers.setContentLength(bytes.length);
+        return new ResponseEntity<>(bytes, headers, HttpStatus.OK);
+    }
+
+    @PutMapping(value = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> updateImage(@PathVariable Long id, @RequestParam("image") MultipartFile image) {
+        if (image == null || image.isEmpty()) {
+            // Пустой файл => 400 Bad Request (уточнено в требованиях)
+            return ResponseEntity.badRequest().build();
+        }
+        boolean updated = postService.updateImage(id, image);
+        if (updated) {
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.notFound().build(); // пост не найден
     }
 
     @PostMapping
-    public ResponseEntity<PostDto> createPost(@RequestBody PostDto postDto) {
+    public ResponseEntity<PostDto> createPost(@Valid @RequestBody PostDto postDto) { // @Valid
         PostDto createdPost = postService.createPost(postDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdPost);
     }
@@ -54,7 +88,7 @@ public class PostController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<PostDto> updatePost(@PathVariable Long id, @RequestBody PostDto postDto) {
+    public ResponseEntity<PostDto> updatePost(@PathVariable Long id, @Valid @RequestBody PostDto postDto) { // @Valid
         return postService.updatePost(id, postDto)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());

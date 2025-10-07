@@ -2,6 +2,7 @@ package com.mirakyan.blog.service;
 
 import com.mirakyan.blog.dto.PostDto;
 import com.mirakyan.blog.dto.PostsResponseDto;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Optional;
 
@@ -23,4 +24,8 @@ public interface PostService {
     void incrementCommentsCount(Long postId);
 
     void decrementCommentsCount(Long postId);
+
+    boolean updateImage(Long id, MultipartFile image);
+
+    Optional<byte[]> getImage(Long id);
 }
