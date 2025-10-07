@@ -71,7 +71,7 @@ public class DatabaseConfiguration extends AbstractJdbcConfiguration {
     public DataSourceInitializer dataSourceInitializer(DataSource dataSource) {
         ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
         populator.addScript(new ClassPathResource("schema.sql"));
-        populator.setContinueOnError(true); // IF NOT EXISTS, но подстрахуемся
+        populator.setContinueOnError(true);
         DataSourceInitializer initializer = new DataSourceInitializer();
         initializer.setDataSource(dataSource);
         initializer.setDatabasePopulator(populator);
