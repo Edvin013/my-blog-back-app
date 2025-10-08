@@ -18,7 +18,6 @@
     </properties>
 
     <dependencies>
-        <!-- Spring Core и Web -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-webmvc</artifactId>
@@ -42,8 +41,6 @@
             <artifactId>spring-jdbc</artifactId>
             <version>${spring.version}</version>
         </dependency>
-
-        <!-- Servlet API (только для компиляции, контейнер предоставит в рантайме) -->
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
@@ -51,14 +48,12 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Spring Data JDBC -->
         <dependency>
             <groupId>org.springframework.data</groupId>
             <artifactId>spring-data-jdbc</artifactId>
             <version>${spring-data.version}</version>
         </dependency>
 
-        <!-- Jackson dependencies -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
@@ -80,14 +75,12 @@
             <version>2.18.4</version>
         </dependency>
 
-        <!-- PostgreSQL Driver -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>42.7.8</version>
         </dependency>
 
-        <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -95,14 +88,12 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Bean Validation -->
         <dependency>
             <groupId>org.hibernate.validator</groupId>
             <artifactId>hibernate-validator</artifactId>
             <version>${hibernate.validator.version}</version>
         </dependency>
 
-        <!-- Test dependencies -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -121,14 +112,12 @@
             <version>${spring.version}</version>
             <scope>test</scope>
         </dependency>
-        <!-- H2 для интеграционных тестов -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <version>2.2.224</version>
             <scope>test</scope>
         </dependency>
-        <!-- Mockito -->
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
@@ -141,7 +130,6 @@
             <version>5.12.0</version>
             <scope>test</scope>
         </dependency>
-        <!-- AssertJ -->
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
@@ -155,7 +143,6 @@
             <version>2.2</version>
             <scope>test</scope>
         </dependency>
-        <!-- JsonPath для jsonPath матчеров -->
         <dependency>
             <groupId>com.jayway.jsonpath</groupId>
             <artifactId>json-path</artifactId>

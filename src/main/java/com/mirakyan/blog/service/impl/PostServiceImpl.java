@@ -126,7 +126,6 @@ public class PostServiceImpl implements PostService {
         postRepository.findAll().forEach(all::add);
         all.sort(Comparator.comparing(Post::getCreatedAt).reversed());
 
-        // При отсутствии критериев поиска просто используем отсортированный список
         List<Post> filtered;
         if (!needTitleMatch && !needTagsMatch) {
             filtered = all;
@@ -231,7 +230,7 @@ public class PostServiceImpl implements PostService {
     @Override
     public boolean updateImage(Long id, MultipartFile image) {
         if (image == null || image.isEmpty()) {
-            return false; // контроллер вернёт 400
+            return false;
         }
         Optional<Post> postOpt = postRepository.findById(id);
         if (!postOpt.isPresent()) {
