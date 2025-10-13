@@ -110,10 +110,9 @@ class CommentServiceImplTest {
     void getCommentsByPostId() {
         Comment c1 = Comment.builder().id(1L).text("A").postId(11L).createdAt(Instant.now()).updatedAt(Instant.now()).build();
         Comment c2 = Comment.builder().id(2L).text("B").postId(11L).createdAt(Instant.now()).updatedAt(Instant.now()).build();
-        when(commentRepository.findCommentByPostId(11L)).thenReturn(List.of(c1, c2));
+        when(commentRepository.findByPostId(11L)).thenReturn(List.of(c1, c2));
         var list = commentService.getCommentsByPostId(11L);
         assertThat(list).hasSize(2);
         assertThat(list.get(0).getPostId()).isEqualTo(11L);
     }
 }
-

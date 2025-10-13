@@ -18,7 +18,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -74,7 +73,6 @@ public class PostServiceImpl implements PostService {
     @Override
     public boolean deletePost(Long id) {
         if (postRepository.existsById(id)) {
-            // todo comments delete handled by FK cascade
             postRepository.deleteById(id);
             log.info("Удалён пост id={}", id);
             return true;
@@ -84,15 +82,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public Optional<Integer> incrementLikes(Long id) {
-        Optional<Post> postOptional = postRepository.findById(id);
-        if (!postOptional.isPresent()) {
-            return Optional.empty();
-        }
-        Post post = postOptional.get();
-        // TODO: возможна гонка при параллельных лайках.
-        post.setLikesCount(post.getLikesCount() + 1);
-        postRepository.save(post);
-        return Optional.of(post.getLikesCount());
+        return postRepository.incrementLikesAndGet(id);
     }
 
     @Override
@@ -100,10 +90,8 @@ public class PostServiceImpl implements PostService {
         if (pageNumber < 1) pageNumber = 1;
         if (pageSize < 1) pageSize = 1;
 
-        String rawSearch = search == null ? "" : search;
-        String trimmed = rawSearch.trim();
-
-        List<String> tokens = Arrays.stream(trimmed.split("\\s+"))
+        String rawSearch = search == null ? "" : search.trim();
+        List<String> tokens = rawSearch.isEmpty() ? List.of() : Arrays.stream(rawSearch.split("\\s+"))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .toList();
@@ -118,63 +106,19 @@ public class PostServiceImpl implements PostService {
             }
         }
         String titleSubstring = titleTokens.isEmpty() ? "" : String.join(" ", titleTokens).toLowerCase(Locale.ROOT);
-        boolean needTitleMatch = !titleSubstring.isEmpty();
-        boolean needTagsMatch = !tagTokens.isEmpty();
 
-        // Загружаем все посты и сортируем DESC по createdAt (минимально инвазивно)
-        List<Post> all = new ArrayList<>();
-        postRepository.findAll().forEach(all::add);
-        all.sort(Comparator.comparing(Post::getCreatedAt).reversed());
-
-        List<Post> filtered;
-        if (!needTitleMatch && !needTagsMatch) {
-            filtered = all;
-        } else {
-            filtered = all.stream()
-                    .filter(p -> {
-                        if (needTagsMatch) {
-                            String[] postTags = p.getTags();
-                            if (postTags == null || postTags.length == 0) {
-                                return false;
-                            }
-                            Set<String> postTagSet = Arrays.stream(postTags)
-                                    .filter(Objects::nonNull)
-                                    .map(s -> s.toLowerCase(Locale.ROOT))
-                                    .collect(Collectors.toSet());
-                            for (String required : tagTokens) {
-                                if (!postTagSet.contains(required)) {
-                                    return false;
-                                }
-                            }
-                        }
-                        if (needTitleMatch) {
-                            String title = p.getTitle();
-                            if (title == null || !title.toLowerCase(Locale.ROOT).contains(titleSubstring)) {
-                                return false;
-                            }
-                        }
-                        return true;
-                    })
-                    .toList();
-        }
-
-        int total = filtered.size();
+        int total = postRepository.countFiltered(titleSubstring, tagTokens.isEmpty() ? null : tagTokens);
         int lastPage = total == 0 ? 0 : (int) Math.ceil(total / (double) pageSize);
         if (lastPage != 0 && pageNumber > lastPage) {
             pageNumber = lastPage;
         }
+        int offset = (pageNumber - 1) * pageSize;
+        List<Post> page = total == 0 ? Collections.emptyList() : postRepository.findFiltered(titleSubstring, tagTokens.isEmpty() ? null : tagTokens, offset, pageSize);
 
-        int fromIndex = (pageNumber - 1) * pageSize;
-        int toIndex = Math.min(fromIndex + pageSize, total);
-        List<PostDto> slice;
-        if (fromIndex >= total || fromIndex < 0) {
-            slice = Collections.emptyList();
-        } else {
-            slice = filtered.subList(fromIndex, toIndex).stream()
-                    .map(this::convertToDto)
-                    .map(this::truncateTextForPreview)
-                    .toList();
-        }
+        List<PostDto> slice = page.stream()
+                .map(this::convertToDto)
+                .map(this::truncateTextForPreview)
+                .toList();
 
         boolean hasPrev = pageNumber > 1 && lastPage > 0;
         boolean hasNext = pageNumber < lastPage;
@@ -214,17 +158,12 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public void incrementCommentsCount(Long id) {
-        Post post = postRepository.findById(id).get();
-        // TODO: возможна гонка при параллельных операциях добавления комментариев
-        post.setCommentsCount(post.getCommentsCount() + 1);
-        postRepository.save(post);
+        postRepository.incrementCommentsCount(id);
     }
 
     @Override
     public void decrementCommentsCount(Long postId) {
-        Post post = postRepository.findById(postId).get();
-        post.setCommentsCount(Math.max(0, post.getCommentsCount() - 1));
-        postRepository.save(post);
+        postRepository.decrementCommentsCount(postId);
     }
 
     @Override
@@ -232,11 +171,9 @@ public class PostServiceImpl implements PostService {
         if (image == null || image.isEmpty()) {
             return false;
         }
-        Optional<Post> postOpt = postRepository.findById(id);
-        if (!postOpt.isPresent()) {
+        if (!postRepository.existsById(id)) {
             return false;
         }
-        Post post = postOpt.get();
         try {
             String original = image.getOriginalFilename();
             String ext = "";
@@ -247,11 +184,11 @@ public class PostServiceImpl implements PostService {
             String fileName = "post-" + id + ext;
             Path target = Paths.get(IMAGES_DIR, fileName).toAbsolutePath();
             Files.write(target, image.getBytes());
-            post.setImagePath(target.toString());
-            post.setUpdatedAt(Instant.now());
-            postRepository.save(post);
-            log.info("Обновлено изображение поста id={}", id);
-            return true;
+            boolean updated = postRepository.updateImagePath(id, target.toString());
+            if (updated) {
+                log.info("Обновлено изображение поста id={}", id);
+            }
+            return updated;
         } catch (IOException e) {
             log.warn("Ошибка сохранения изображения поста id={}: {}", id, e.getMessage());
             return false;

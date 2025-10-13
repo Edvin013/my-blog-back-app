@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -50,17 +51,17 @@ class PostServiceImplTest {
     @Test
     @DisplayName("createPost: должен сохранить пост и вернуть DTO с начальными счетчиками")
     void createPost() {
-        PostDto request = PostDto.builder()
-                .title("New Title")
-                .text("Body")
-                .tags(List.of("Java", "java", "SPRING"))
-                .build();
-
         when(postRepository.save(any(Post.class))).thenAnswer(inv -> {
             Post p = inv.getArgument(0);
             p.setId(10L);
             return p;
         });
+
+        PostDto request = PostDto.builder()
+                .title("New Title")
+                .text("Body")
+                .tags(List.of("Java", "java", "SPRING"))
+                .build();
 
         PostDto result = postService.createPost(request);
 
@@ -97,9 +98,7 @@ class PostServiceImplTest {
     @Test
     @DisplayName("incrementLikes: увеличивает счётчик и возвращает новое значение")
     void incrementLikes() {
-        when(postRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(postRepository.save(any(Post.class))).thenAnswer(inv -> inv.getArgument(0));
-
+        when(postRepository.incrementLikesAndGet(1L)).thenReturn(Optional.of(3));
         Optional<Integer> newLikes = postService.incrementLikes(1L);
         assertThat(newLikes).contains(3);
     }
@@ -107,7 +106,7 @@ class PostServiceImplTest {
     @Test
     @DisplayName("incrementLikes: пост не найден => empty")
     void incrementLikesNotFound() {
-        when(postRepository.findById(99L)).thenReturn(Optional.empty());
+        when(postRepository.incrementLikesAndGet(99L)).thenReturn(Optional.empty());
         assertThat(postService.incrementLikes(99L)).isEmpty();
     }
 
@@ -129,24 +128,24 @@ class PostServiceImplTest {
     }
 
     @Test
-    @DisplayName("getAllPosts: фильтрация по подстроке и тегам, пагинация и обрезка текста")
+    @DisplayName("getAllPosts: фильтрация по тегам и пагинация через БД")
     void getAllPostsFilteringAndPagination() {
         Post p1 = Post.builder().id(1L).title("Spring Data Intro").text("T".repeat(150)).likesCount(0).commentsCount(0)
                 .tags(new String[]{"spring", "data"}).createdAt(Instant.now()).updatedAt(Instant.now()).build();
         Post p2 = Post.builder().id(2L).title("Java Streams Guide").text("Short text").likesCount(0).commentsCount(0)
                 .tags(new String[]{"java"}).createdAt(Instant.now().minusSeconds(10)).updatedAt(Instant.now()).build();
-        when(postRepository.findAll()).thenReturn(List.of(p1, p2));
 
-        PostsResponseDto empty = postService.getAllPosts("#spring Guide", 1, 10);
-        assertThat(empty.getPosts()).isEmpty();
-
+        // Сценарий 1: поиск по тегам #spring #data
+        when(postRepository.countFiltered(eq(""), eq(List.of("spring", "data")))).thenReturn(1);
+        when(postRepository.findFiltered(eq(""), eq(List.of("spring", "data")), eq(0), eq(10))).thenReturn(List.of(p1));
         PostsResponseDto onlyP1 = postService.getAllPosts("#spring  #data", 1, 10);
         assertThat(onlyP1.getPosts()).hasSize(1);
-        PostDto dto = onlyP1.getPosts().get(0);
-        assertThat(dto.getId()).isEqualTo(1L);
-        assertThat(dto.getText().length()).isEqualTo(128 + 1); // 128 + ellipsis
-        assertThat(dto.getText()).endsWith("…");
+        assertThat(onlyP1.getPosts().get(0).getId()).isEqualTo(1L);
+        assertThat(onlyP1.getPosts().get(0).getText().length()).isEqualTo(128 + 1); // обрезка + …
 
+        // Сценарий 2: пустой поиск, две записи, пагинация размером 1
+        when(postRepository.countFiltered(eq(""), isNull())).thenReturn(2);
+        when(postRepository.findFiltered(eq(""), isNull(), eq(1), eq(1))).thenReturn(List.of(p2)); // offset=1 (вторая страница)
         PostsResponseDto page2 = postService.getAllPosts("", 2, 1);
         assertThat(page2.getPosts()).hasSize(1);
         assertThat(page2.getPosts().get(0).getId()).isEqualTo(2L);
@@ -155,4 +154,3 @@ class PostServiceImplTest {
         assertThat(page2.getLastPage()).isEqualTo(2);
     }
 }
-
