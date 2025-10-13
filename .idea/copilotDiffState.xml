@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CopilotDiffPersistence">
+    <option name="pendingDiffs">
+      <map>
+        <entry key="$PROJECT_DIR$/src/main/resources/application.properties">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/src/main/resources/application.properties" />
+              <option name="originalContent" value="# Database configuration&#10;db.driver=org.postgresql.Driver&#10;db.url=jdbc:postgresql://localhost:5432/blog_db&#10;db.username=postgres&#10;db.password=postgres&#10;&#10;" />
+              <option name="updatedContent" value="# Database configuration&#10;db.driver=org.postgresql.Driver&#10;db.url=jdbc:postgresql://localhost:5432/blog_db&#10;db.username=postgres&#10;db.password=postgres&#10;&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>
