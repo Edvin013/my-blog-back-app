@@ -39,23 +39,18 @@ public class PostController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping("/{id}")
-    public ResponseEntity<PostDto> getPostByIdViaPost(@PathVariable Long id) { // возвращает то же что и GET
-        return getPostById(id);
-    }
-
     @GetMapping("/{id}/image")
     public ResponseEntity<byte[]> getPostImage(@PathVariable Long id) {
         if (!postService.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
         Optional<byte[]> imageOpt = postService.getImage(id);
-        if (!imageOpt.isPresent()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT); // 204 если изображения нет
+        if (imageOpt.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
         byte[] bytes = imageOpt.get();
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM); // TODO: определять content-type по расширени��
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         headers.setContentLength(bytes.length);
         return new ResponseEntity<>(bytes, headers, HttpStatus.OK);
     }
@@ -73,7 +68,7 @@ public class PostController {
     }
 
     @PostMapping
-    public ResponseEntity<PostDto> createPost(@Valid @RequestBody PostDto postDto) { // @Valid
+    public ResponseEntity<PostDto> createPost(@Valid @RequestBody PostDto postDto) {
         PostDto createdPost = postService.createPost(postDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdPost);
     }

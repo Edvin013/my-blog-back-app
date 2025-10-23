@@ -6,10 +6,11 @@ import com.mirakyan.blog.dto.PostsResponseDto;
 import com.mirakyan.blog.service.PostService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,12 +20,17 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@WebMvcTest(PostController.class)
 class PostControllerTest {
 
-    private final PostService postService = Mockito.mock(PostService.class);
-    private final PostController controller = new PostController(postService);
-    private final MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private PostService postService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
     @DisplayName("GET /api/posts возвращает список постов и метаданные пагинации")

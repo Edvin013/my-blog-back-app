@@ -33,7 +33,7 @@ public class CommentController {
     @PostMapping
     public ResponseEntity<CommentDto> addComment(@PathVariable Long postId, @Valid @RequestBody CommentDto commentDto) {
         return commentService.addCommentToPost(postId, commentDto)
-                .map(c -> ResponseEntity.status(HttpStatus.CREATED).body(c)) // 201 Created
+                .map(c -> ResponseEntity.status(HttpStatus.CREATED).body(c))
                 .orElse(ResponseEntity.notFound().build());
 
     }
