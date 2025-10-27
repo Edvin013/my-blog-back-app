@@ -1,31 +1,27 @@
 package com.mirakyan.blog.integration;
 
-import com.mirakyan.blog.config.DatabaseConfiguration;
-import com.mirakyan.blog.config.WebConfiguration;
 import com.mirakyan.blog.dto.CommentDto;
 import com.mirakyan.blog.dto.PostDto;
 import com.mirakyan.blog.dto.PostsResponseDto;
 import com.mirakyan.blog.service.CommentService;
 import com.mirakyan.blog.service.PostService;
+import com.mirakyan.blog.MyBlogBackApp4Application;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@ExtendWith(SpringExtension.class)
-@WebAppConfiguration
-@ContextConfiguration(classes = {WebConfiguration.class, DatabaseConfiguration.class})
+@SpringBootTest(classes = MyBlogBackApp4Application.class)
+@ActiveProfiles("test")
 @Transactional
-@Sql(scripts = "classpath:schema.sql")
+@Sql(scripts = "classpath:schema.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 class BlogIntegrationTest {
 
     @Autowired

@@ -1,32 +1,79 @@
-# My Blog Back App
+# My Blog Backend Application (Sprint 4)
 
-Java 21 / Spring Framework 6.1.x (без Spring Boot) REST backend блога. Сборка в WAR (`ROOT.war`) для деплоя в стандартный сервлет‑контейнер (Tomcat / Jetty). Используется Spring MVC + Spring Data JDBC + PostgreSQL.
+Бэкенд приложения-блога, переписанный с использованием Spring Boot 3.5.6 и Gradle.
 
-## Стек
-- Java 21
-- Spring Web MVC 6.1.x
-- Spring Data JDBC 3.3.x
-- PostgreSQL
-- Bean Validation (Hibernate Validator)
-- Lombok
+## Технологии
 
-## Сборка и запуск
-```bash
-mvn clean package
+- **Java 21**
+- **Spring Boot 3.5.6**
+  - Spring Boot Starter Web
+  - Spring Boot Starter Data JDBC
+  - Spring Boot Starter Validation
+  - Spring Boot Starter Test
+- **Gradle** (система сборки)
+- **PostgreSQL** (production database)
+- **H2** (test database)
+- **Lombok**
+- **JUnit 5**
+- **Mockito**
+- **AssertJ**
+
+## Изменения по сравнению со Sprint 3
+
+1. **Система сборки**: Maven → Gradle
+2. **Упаковка**: WAR → Executable JAR
+3. **Сервлет-контейнер**: Внешний Tomcat → Встроенный Tomcat
+4. **Конфигурация**: Упрощена за счёт Spring Boot Auto-Configuration
+5. **Тесты**: Переписаны с использованием Spring Boot Test и кеширования контекстов
+
+
+### PostgreSQL (Production)
+Создайте базу данных:
+
+```sql
+CREATE DATABASE blog_db;
+CREATE USER postgres WITH PASSWORD 'postgres';
+GRANT ALL PRIVILEGES ON DATABASE blog_db TO postgres;
 ```
-Результат: `target/ROOT.war`.
 
-Деплой: скопировать `target/ROOT.war` в `$TOMCAT_HOME/webapps/`.
-Приложение будет доступно по `http://localhost:8080/api/...` (контекст пустой за счёт имени ROOT).
+Настройки подключения находятся в `src/main/resources/application.properties`:
 
-## Конфигурация БД
-Настройки в `src/main/resources/application.properties`:
-
-При старте выполняется `schema.sql` (бин `DataSourceInitializer`) — таблицы создаются автоматически. Скрипт безопасен при повторном выполнении (IF NOT EXISTS).
-## Тесты
-Запуск:
-```bash
-mvn test
+```properties
+spring.datasource.url=jdbc:postgresql://localhost:5432/blog_db
+spring.datasource.username=postgres
+spring.datasource.password=postgres
 ```
-## Лицензия
-Internal demo.
+
+### H2 (Tests)
+
+Для тестов автоматически используется встроенная H2 база данных в памяти.
+Настройки находятся в `src/test/resources/application-test.properties`.
+
+## Запуск тестов
+
+### Запуск всех тестов
+
+```bash
+./gradlew test
+```
+## Запуск приложения
+
+### Через Gradle
+
+```bash
+./gradlew bootRun
+```
+
+### Через JAR-файл
+
+```bash
+java -jar build/libs/my-blog-back-app-four-0.0.1-SNAPSHOT.jar
+```
+
+
+Приложение запустится на порту **8080** (по умолчанию).
+
+## Автор
+
+Mirakyan
+
