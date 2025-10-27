@@ -46,7 +46,7 @@ public class PostController {
         }
         Optional<byte[]> imageOpt = postService.getImage(id);
         if (imageOpt.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         byte[] bytes = imageOpt.get();
         HttpHeaders headers = new HttpHeaders();
